@@ -1,21 +1,26 @@
-import { Component } from 'react';
-import '../index.css';
+import PropTypes from 'prop-types';
 
-export class ImageGalleryItem extends Component {
-  onClick = e => {
+export const ImageGalleryItem = ({
+  largeImageURL,
+  handleLargeImage,
+  id,
+  webformatURL,
+}) => {
+  const onClick = e => {
     e.preventDefault();
-    this.props.handleId(e.currentTarget.closest('li').id);
-    this.props.handleModal();
+    handleLargeImage(largeImageURL);
   };
 
-  render() {
-    const { id, webformatURL } = this.props;
-    return (
-      <li className="gallery-item item" id={id}>
-        <a href="./" onClick={this.onClick} className="link">
-          <img src={webformatURL} alt="" className="image" />
-        </a>
-      </li>
-    );
-  }
-}
+  return (
+    <li className="gallery-item item" id={id} onClick={onClick}>
+      <img src={webformatURL} alt="" className="image" />
+    </li>
+  );
+};
+
+ImageGalleryItem.propTypes = {
+  largeImageURL: PropTypes.string.isRequired,
+  handleLargeImage: PropTypes.func.isRequired,
+  id: PropTypes.number.isRequired,
+  webformatURL: PropTypes.string.isRequired,
+};

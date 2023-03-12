@@ -1,28 +1,9 @@
 import { Component } from 'react';
-import '../index.css';
+import PropTypes from 'prop-types';
 
 export class Modal extends Component {
-  state = {
-    id: this.props.currentId,
-    imageInfo: '',
-  };
-
   componentDidMount() {
-    this.setState({ id: this.props.currentId });
-
     window.addEventListener('keydown', this.onEscClick);
-
-    fetch(
-      `https://pixabay.com/api/?key=32923550-e97d894c3a0a0654cb5be36c1&id=${this.state.id.toString()}`
-    )
-      .then(data => data.json())
-      .then(data => {
-        const arr = data.hits;
-        const url = arr.map(({ largeImageURL }) => {
-          return largeImageURL;
-        });
-        this.setState({ imageInfo: url });
-      });
   }
 
   componentWillUnmount() {
@@ -31,13 +12,13 @@ export class Modal extends Component {
 
   onEscClick = e => {
     if (e.code === 'Escape') {
-      return this.props.handleModal();
+      return this.props.handleLargeImage();
     }
   };
 
   onBakcdropClick = e => {
     if (e.currentTarget === e.target) {
-      return this.props.handleModal();
+      return this.props.handleLargeImage();
     }
   };
 
@@ -45,9 +26,14 @@ export class Modal extends Component {
     return (
       <div className="overlay" onClick={this.onBakcdropClick}>
         <div className="modal">
-          <img src={this.state.imageInfo} alt="" />
+          <img src={this.props.imageInfo} alt="" />
         </div>
       </div>
     );
   }
 }
+
+Modal.propTypes = {
+  handleLargeImage: PropTypes.func.isRequired,
+  imageInfo: PropTypes.string.isRequired,
+};

@@ -4,85 +4,65 @@ import { ImageGallery } from './ImageGallery';
 import { Modal } from './Modal';
 import { Button } from './Button';
 import { Loader } from './Loader';
+import { getImages } from '../services/PixabayApi';
 import '../index.css';
 
 export class App extends Component {
   state = {
     q: '',
     apiRespond: [],
-    id: null,
+    modalImage: '',
     status: 'idle',
     modal: false,
     pageCounter: 1,
-    totalHits: null,
+    totalImages: 0,
   };
 
   componentDidUpdate(prevProps, prevState) {
-    if (this.state.q.trim() !== prevState.q.trim()) {
+    const { q, pageCounter } = this.state;
+    if (q !== prevState.q || pageCounter !== prevState.pageCounter) {
       this.setState({ status: 'pending' });
-      setTimeout(() => {
-        fetch(
-          `https://pixabay.com/api/?q=${this.state.q}&page=${this.state.pageCounter}&key=32923550-e97d894c3a0a0654cb5be36c1&image_type=photo&orientation=horizontal&per_page=12`
-        )
-          .then(data => data.json())
-          .then(data => {
-            const hits = data.hits;
-            return this.setState(() => {
-              return {
-                apiRespond: [...hits],
-                totalHits: Math.ceil(data.totalHits / 12),
-              };
-            });
-          });
-        this.setState({
-          status: 'resolved',
-          pageCounter: this.state.pageCounter + 1,
+
+      getImages(q, pageCounter).then(({ hits, totalHits }) => {
+        if (hits.length === 0) {
+          this.setState({ status: 'idle' });
+          return alert('There are no pictures');
+        }
+
+        return this.setState(prevState => {
+          return {
+            apiRespond: [...prevState.apiRespond, ...hits],
+            totalImages: totalHits,
+            status: 'resolved',
+          };
         });
-      }, 500);
+      });
     }
   }
 
-  onSubmit = value => {
-    this.setState({ q: value });
+  onSubmit = q => {
+    this.setState({ q, pageCounter: 1, apiRespond: [], totalImages: 0 });
   };
 
   handleModal = () => {
-    return this.setState({ modal: !this.state.modal });
+    return this.setState(prevState => {
+      return { modal: !prevState.modal };
+    });
   };
 
-  handleId = id => {
-    return this.setState({ id });
+  handleLargeImage = (modalImage = '') => {
+    this.handleModal();
+    this.setState({ modalImage });
   };
 
   handleLoadMore = () => {
-    const { totalHits, pageCounter, apiRespond, q } = this.state;
-
-    if (pageCounter <= totalHits) {
-      this.setState({
-        status: 'pending',
-        pageCounter: pageCounter + 1,
-      });
-
-      setTimeout(() => {
-        fetch(
-          `https://pixabay.com/api/?q=${q}&page=${pageCounter}&key=32923550-e97d894c3a0a0654cb5be36c1&image_type=photo&orientation=horizontal&per_page=12`
-        )
-          .then(data => data.json())
-          .then(data => {
-            const hits = data.hits;
-            return this.setState(() => {
-              return {
-                apiRespond: [...apiRespond, ...hits],
-              };
-            });
-          });
-        this.setState({ status: 'resolved' });
-      }, 500);
-    }
+    this.setState(prevState => ({
+      pageCounter: prevState.pageCounter + 1,
+    }));
   };
 
   render() {
-    const { status, id, modal, q, apiRespond } = this.state;
+    const { status, modal, apiRespond, modalImage, totalImages } = this.state;
 
     if (status === 'idle') {
       return <Searchbar onSubmit={this.onSubmit} />;
@@ -93,11 +73,9 @@ export class App extends Component {
         <>
           <Searchbar onSubmit={this.onSubmit} />
           <ImageGallery
-            q={q}
-            handleId={this.handleId}
-            handleModal={this.handleModal}
+            handleLargeImage={this.handleLargeImage}
             resp={apiRespond}
-          ></ImageGallery>
+          />
           <Loader />
         </>
       );
@@ -108,13 +86,18 @@ export class App extends Component {
         <>
           <Searchbar onSubmit={this.onSubmit} />
           <ImageGallery
-            q={q}
-            handleId={this.handleId}
-            handleModal={this.handleModal}
+            handleLargeImage={this.handleLargeImage}
             resp={apiRespond}
-          ></ImageGallery>{' '}
-          {apiRespond && <Button handleLoadMore={this.handleLoadMore} />}
-          {modal && <Modal handleModal={this.handleModal} currentId={id} />}
+          />
+          {apiRespond.length !== totalImages && (
+            <Button handleLoadMore={this.handleLoadMore} />
+          )}
+          {modal && (
+            <Modal
+              handleLargeImage={this.handleLargeImage}
+              imageInfo={modalImage}
+            />
+          )}
         </>
       );
     }
