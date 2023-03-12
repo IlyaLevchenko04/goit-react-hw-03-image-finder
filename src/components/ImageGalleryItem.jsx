@@ -11,7 +11,7 @@ export const ImageGalleryItem = ({
   };
 
   return (
-    <li className="gallery-item item" id={id} onClick={onClick}>
+    <li className="gallery-item item" onClick={onClick}>
       <img src={webformatURL} alt="" className="image" />
     </li>
   );
